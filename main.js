@@ -15,6 +15,12 @@ const SGTIN = '';
 // Action type to use for the resulting action
 const RESULT_ACTION_TYPE = '_originTrailCertified';
 
+/**
+ * Build the XML payload from the EVRYTHNG action and Thng.
+ * @param {Object} action - The action that occurred.
+ * @param {Object} thng - The Thng the action occurred on.
+ * @returns {String} - An XML document string that contains event data.
+ */
 const buildXmlDocument = (action, thng) => {
   const { location, createdAt, context } = action;
   const { latitude, longitude } = location;
@@ -136,36 +142,47 @@ const buildXmlDocument = (action, thng) => {
   </epcis:EPCISDocument>`;
 };
 
+/**
+ * Read a complete Thng object from its ID.
+ * @param {String} id - ID of the Thng to read.
+ * @returns {Promise} A Promise that resolves to the Thng object.
+ */
 const readThng = id => app.thng(id).read();
 
-const createOriginTrailAction = (action, thng) => {
+/**
+ * Create an OriginTrail action through their API.
+ * @param {Object} action - The action that occurred.
+ * @param {Object} thng - The Thng the action occurred on.
+ * @returns {Promise} A Promise that resolves to the resulting action.
+ */
+const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) => {
+  // Send data to OriginTrail
   const url = `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`;
   const formData = { importfile: buildXmlDocument(action, thng), importtype: 'GS1' };
+  request.post({ url, formData }, (err, res, body) => {
+    if (err) {
+      reject(err);
+      return;
+    }
 
-  return new Promise((resolve, reject) => {
-    request.post({ url, formData }, (err, res, body) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+    logger.info(`Event exported to OriginTrail -- ${body}`);
 
-      logger.info(`Event exported to OriginTrail -- ${body}`);
-      const otData = JSON.parse(body);
-      const payload = {
-        thng: action.thng,
-        customFields: {
-          actionId: action.id,
-          originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${SGTIN}`,
-          originTrailImport: otData.import_id,
-          ethereumWallet: COMPANY_WALLET,
-        },
-      };
-      app.action(RESULT_ACTION_TYPE).create(payload)
-        .then(resolve)
-        .catch(reject);
-    });
+    // Create resulting EVRYTHNG action
+    const otData = JSON.parse(body);
+    const payload = {
+      thng: action.thng,
+      customFields: {
+        actionId: action.id,
+        originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${SGTIN}`,
+        originTrailImport: otData.import_id,
+        ethereumWallet: COMPANY_WALLET,
+      },
+    };
+    app.action(RESULT_ACTION_TYPE).create(payload)
+      .then(resolve)
+      .catch(reject);
   });
-};
+});
 
 // @filter(onActionCreated) action.customFields.createOriginTrail=true
 function onActionCreated(event) {
