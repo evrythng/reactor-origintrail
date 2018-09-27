@@ -1,19 +1,17 @@
 const request = require('request');
 
-// URL (and port if applicable) of the OriginTrail node
-const OT_NODE_URL = '';
-// Auth token for that node
+// Fixed configuration values
+const OT_NODE_URL = 'https://proba2.origintrail.io:8900';
+const COMPANY_WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
+const COMPANY_NAME = 'EVRYTHNG';
+const COMPANY_EMAIL = 'otnode@evrythng.com';
+
+// Auth token for the node
 const OT_AUTH_TOKEN = '';
-// Company's name
-const COMPANY_NAME = '';
-// Company's contact email address
-const COMPANY_EMAIL = '';
-// Company's blockchain wallet
-const COMPANY_WALLET = '';
-// Product's batch SGTIN
+// Product's SGTIN
 const SGTIN = '';
-// Action type to use for the resulting action
-const RESULT_ACTION_TYPE = '_originTrailCertified';
+// Action type to use for the resulting output action
+const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
 /**
  * Build the XML payload from the EVRYTHNG action and Thng.
@@ -153,7 +151,7 @@ const readThng = id => app.thng(id).read();
  * Create an OriginTrail action through their API.
  * @param {Object} action - The action that occurred.
  * @param {Object} thng - The Thng the action occurred on.
- * @returns {Promise} A Promise that resolves to the resulting action.
+ * @returns {Promise} A Promise that resolves to the created output action.
  */
 const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) => {
   // Send data to OriginTrail
@@ -167,7 +165,7 @@ const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) 
 
     logger.info(`Event exported to OriginTrail -- ${body}`);
 
-    // Create resulting EVRYTHNG action
+    // Create output EVRYTHNG action
     const otData = JSON.parse(body);
     const payload = {
       thng: action.thng,
@@ -178,7 +176,7 @@ const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) 
         ethereumWallet: COMPANY_WALLET,
       },
     };
-    app.action(RESULT_ACTION_TYPE).create(payload)
+    app.action(OUTPUT_ACTION_TYPE).create(payload)
       .then(resolve)
       .catch(reject);
   });
