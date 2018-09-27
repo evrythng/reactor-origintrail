@@ -1,17 +1,17 @@
 const request = require('request');
 
-// Fixed configuration values
-const OT_NODE_URL = 'https://proba2.origintrail.io:8900';
-const COMPANY_WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
-const COMPANY_NAME = 'EVRYTHNG';
-const COMPANY_EMAIL = 'otnode@evrythng.com';
-
 // Auth token for the node
 const OT_AUTH_TOKEN = '';
 // Product's SGTIN
 const SGTIN = '';
 // Action type to use for the resulting output action
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
+
+// Fixed configuration values
+const OT_NODE_URL = 'https://proba2.origintrail.io:8900';
+const COMPANY_WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
+const COMPANY_NAME = 'EVRYTHNG';
+const COMPANY_EMAIL = 'otnode@evrythng.com';
 
 /**
  * Build the XML payload from the EVRYTHNG action and Thng.
