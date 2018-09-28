@@ -17,10 +17,14 @@ Some example configuration values (truncated):
 ```js
 // Auth token for the node
 const OT_AUTH_TOKEN = 'cd64dd41...';
-// Product's SGTIN
+// Item's SGTIN
 const SGTIN = 'Up4nR6KUGYaVtXawwkYBmpcf';
 // Action type to use for the resulting output action
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
+// The sending company's name
+const COMPANY_NAME = 'EVRYTHNG';
+// The sending company's contact email
+const COMPANY_EMAIL = 'otnode@evrythng.com';
 ```
 
 
@@ -28,7 +32,10 @@ const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
 The script will react to actions with a `createOriginTrail=true` custom field 
 and will create a blockchain transaction for the action using the specified
-OriginTrail node. The result will include the transaction ID from the blockchain 
+OriginTrail node. For convenience, EVRYTHNG offers managed OriginTrail nodes
+that you can use, such as `https://origintrail.evrythng.io`.
+
+The result will include the transaction ID from the blockchain 
 and will be added to a new confirmation action (as specified by 
 `RESULT_ACTION_TYPE`).
 
