@@ -5,8 +5,7 @@ A Reactor script to verify EVRYTHNG Actions on the blockchain via OriginTrail.
 
 ## Configure
 
-* Get credentials for the OriginTrail node and an SGTIN, and add them to 
-  `main.js`.
+* Get credentials for the OriginTrail node, and add them to `main.js`.
 * Create the  `OUTPUT_ACTION_TYPE` (the default, or your choice) action type in 
   the EVRYTHNG project.
 * Deploy this Reactor script in an application within that project, not 
@@ -17,8 +16,6 @@ Some example configuration values (truncated):
 ```js
 // Auth token for the node
 const OT_AUTH_TOKEN = 'cd64dd41...';
-// Item's SGTIN
-const SGTIN = 'Up4nR6KUGYaVtXawwkYBmpcf';
 // Action type to use for the resulting output action
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 // The sending company's name
