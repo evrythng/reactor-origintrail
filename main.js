@@ -2,8 +2,6 @@ const request = require('request');
 
 // Auth token for the node
 const OT_AUTH_TOKEN = '';
-// Item's SGTIN
-const SGTIN = '';
 // Action type to use for the resulting output action
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 // The sending company's name
@@ -96,7 +94,7 @@ const buildXmlDocument = (action, thng) => {
             </Vocabulary>
             <Vocabulary type="urn:ot:object:batch">
               <VocabularyElementList>
-                <VocabularyElement id="urn:epc:id:sgtin:${SGTIN}">
+                <VocabularyElement id="urn:epc:id:sgtin:${thng.id}">
                   <attribute id="urn:ot:object:product:batch:productId">urn:ot:object:product:${thng.id}</attribute>
                 </VocabularyElement>
               </VocabularyElementList>
@@ -111,7 +109,7 @@ const buildXmlDocument = (action, thng) => {
           <eventTime>${creationTime}</eventTime>
           <eventTimeZoneOffset>-00:00</eventTimeZoneOffset>
           <epcList>
-            <epc>urn:epc:id:sgtin:${SGTIN}</epc>
+            <epc>urn:epc:id:sgtin:${thng.id}</epc>
           </epcList>
           <action>OBSERVE</action>
           <bizStep>urn:epcglobal:cbv:bizstep:observation</bizStep>
@@ -125,7 +123,7 @@ const buildXmlDocument = (action, thng) => {
           <extension>
             <quantityList>
               <quantityElement>
-                <epcClass>urn:epc:id:sgtin:${SGTIN}</epcClass>
+                <epcClass>urn:epc:id:sgtin:${thng.id}</epcClass>
                 <quantity>1</quantity>
                 <uom>PCS</uom>
               </quantityElement>
@@ -143,11 +141,17 @@ const buildXmlDocument = (action, thng) => {
 };
 
 /**
- * Read a complete Thng object from its ID.
- * @param {String} id - ID of the Thng to read.
- * @returns {Promise} A Promise that resolves to the Thng object.
+ * Read the complete Thng object from the action.
+ * @param {Object} action - The action that triggered the script.
+ * @returns {Promise} A Promise that resolves to the Thng object, or an error.
  */
-const readThng = id => app.thng(id).read();
+const readThng = (action) => {
+  if (!action.thng) {
+    return Promise.reject('Action did not specify a Thng');
+  }
+
+  return app.thng(action.thng).read();
+};
 
 /**
  * Create an OriginTrail action through their API.
@@ -173,7 +177,7 @@ const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) 
       thng: action.thng,
       customFields: {
         actionId: action.id,
-        originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${SGTIN}`,
+        originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
         originTrailImport: otData.import_id,
         ethereumWallet: COMPANY_WALLET,
       },
@@ -189,7 +193,7 @@ function onActionCreated(event) {
   const { action } = event;
   logger.info(`Received action to be certified via OriginTrail: ${action.id}`);
 
-  readThng(action.thng)
+  readThng(action)
     .then(thng => createOriginTrailAction(action, thng))
     .then(newAction => logger.info(`Created OriginTrail action: ${newAction.id}`))
     .catch(err => logger.error(err.message || JSON.stringify(err)))
