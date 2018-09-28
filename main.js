@@ -2,16 +2,15 @@ const request = require('request');
 
 // Auth token for the node
 const OT_AUTH_TOKEN = '';
-// Action type to use for the resulting output action
-const OUTPUT_ACTION_TYPE = '_originTrailCertified';
-// The sending company's name
-const COMPANY_NAME = 'EVRYTHNG';
-// The sending company's contact email
-const COMPANY_EMAIL = 'otnode@evrythng.com';
 
 // Fixed configuration values
-const OT_NODE_URL = 'https://proba2.origintrail.io:8900';
-const COMPANY_WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
+const OT_NODE_URL = 'https://origintrail.evrythng.io';
+const WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
+const DEFAULT_SENDER_NAME = 'EVRYTHNG';
+const DEFAULT_SENDER_EMAIL = 'otnode@evrythng.com';
+const DEFAULT_RECEIVER_NAME = 'EVRYTHNG';
+const DEFAULT_RECEIVER_EMAIL = 'otnode@evrythng.com';
+const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
 /**
  * Build the XML payload from the EVRYTHNG action and Thng.
@@ -20,9 +19,13 @@ const COMPANY_WALLET = '0xE1E9c5379C5df627a8De3a951fA493028394A050';
  * @returns {String} - An XML document string that contains event data.
  */
 const buildXmlDocument = (action, thng) => {
-  const { location, createdAt, context } = action;
+  const { location, createdAt, context, customFields } = action;
   const { latitude, longitude } = location;
   const creationTime = new Date(createdAt).toISOString();
+  const senderName = customFields.senderName || DEFAULT_SENDER_NAME;
+  const senderEmail = customFields.senderEmail || DEFAULT_SENDER_EMAIL;
+  const receiverName = customFields.receiverName || DEFAULT_RECEIVER_NAME;
+  const receiverEmail = customFields.receiverEmail || DEFAULT_RECEIVER_EMAIL;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
   <epcis:EPCISDocument xmlns:epcis="urn:epcglobal:epcis:xsd:1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:sbdh="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" schemaVersion="0" creationDate="2001-12-17T09:30:47Z" xsi:schemaLocation="urn:epcglobal:epcis:xsd:1  http://www.gs1si.org/BMS/epcis/1_2/EPCglobal-epcis-1_2.xsd">
@@ -30,17 +33,17 @@ const buildXmlDocument = (action, thng) => {
       <sbdh:StandardBusinessDocumentHeader>
         <sbdh:HeaderVersion>1.0</sbdh:HeaderVersion>
         <sbdh:Sender>
-          <sbdh:Identifier Authority="OriginTrail">urn:ot:object:actor:id:${COMPANY_NAME}</sbdh:Identifier>
+          <sbdh:Identifier Authority="OriginTrail">urn:ot:object:actor:id:${senderName}</sbdh:Identifier>
           <sbdh:ContactInformation>
-            <sbdh:Contact>${COMPANY_NAME}</sbdh:Contact>
-            <sbdh:EmailAddress>${COMPANY_EMAIL}</sbdh:EmailAddress>
+            <sbdh:Contact>${senderName}</sbdh:Contact>
+            <sbdh:EmailAddress>${senderEmail}</sbdh:EmailAddress>
           </sbdh:ContactInformation>
         </sbdh:Sender>
         <sbdh:Receiver>
-          <sbdh:Identifier Authority="OriginTrail">urn:ot:object:actor:id:${COMPANY_NAME}</sbdh:Identifier>
+          <sbdh:Identifier Authority="OriginTrail">urn:ot:object:actor:id:${receiverName}</sbdh:Identifier>
           <sbdh:ContactInformation>
-            <sbdh:Contact>${COMPANY_NAME}</sbdh:Contact>
-            <sbdh:EmailAddress>${COMPANY_EMAIL}</sbdh:EmailAddress>
+            <sbdh:Contact>${receiverName}</sbdh:Contact>
+            <sbdh:EmailAddress>${receiverEmail}</sbdh:EmailAddress>
           </sbdh:ContactInformation>
         </sbdh:Receiver>
         <sbdh:DocumentIdentification>
@@ -63,10 +66,10 @@ const buildXmlDocument = (action, thng) => {
           <VocabularyList>
             <Vocabulary type="urn:ot:object:actor">
               <VocabularyElementList>
-                <VocabularyElement id="urn:ot:object:actor:id:${COMPANY_NAME}">
-                  <attribute id="urn:ot:object:actor:name">${COMPANY_NAME}</attribute>
+                <VocabularyElement id="urn:ot:object:actor:id:${senderName}">
+                  <attribute id="urn:ot:object:actor:name">${senderName}</attribute>
                   <attribute id="urn:ot:object:actor:category">Company</attribute>
-                  <attribute id="urn:ot:object:actor:wallet">${COMPANY_WALLET}</attribute>
+                  <attribute id="urn:ot:object:actor:wallet">${WALLET}</attribute>
                 </VocabularyElement>
               </VocabularyElementList>
             </Vocabulary>
@@ -172,14 +175,14 @@ const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) 
     logger.info(`Event exported to OriginTrail -- ${body}`);
 
     // Create output EVRYTHNG action
-    const otData = JSON.parse(body);
+    const { import_id } = JSON.parse(body);
     const payload = {
       thng: action.thng,
       customFields: {
         actionId: action.id,
         originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
-        originTrailImport: otData.import_id,
-        ethereumWallet: COMPANY_WALLET,
+        originTrailImport: import_id,
+        ethereumWallet: WALLET,
       },
     };
     app.action(OUTPUT_ACTION_TYPE).create(payload)
