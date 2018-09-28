@@ -11,19 +11,6 @@ A Reactor script to verify EVRYTHNG Actions on the blockchain via OriginTrail.
 * Deploy this Reactor script in an application within that project, not 
   forgetting to specify the `dependencies` in `package.json`.
 
-Some example configuration values (truncated):
-
-```js
-// Auth token for the node
-const OT_AUTH_TOKEN = 'cd64dd41...';
-// Action type to use for the resulting output action
-const OUTPUT_ACTION_TYPE = '_originTrailCertified';
-// The sending company's name
-const COMPANY_NAME = 'EVRYTHNG';
-// The sending company's contact email
-const COMPANY_EMAIL = 'otnode@evrythng.com';
-```
-
 
 ## Use
 
@@ -31,6 +18,15 @@ The script will react to actions with a `createOriginTrail=true` custom field
 and will create a blockchain transaction for the action using the specified
 OriginTrail node. For convenience, EVRYTHNG offers managed OriginTrail nodes
 that you can use, such as `https://origintrail.evrythng.io`.
+
+In addition to the triggering custom field above, other fields should be 
+specified to set the sender and receiver details in each OriginTrail 
+transaction:
+
+* `senderName` - Sending company name.
+* `senderEmail` - Sending company email.
+* `receiverName` - Receiving company name.
+* `receiverEmail` - Receiving company email.
 
 The result will include the transaction ID from the blockchain 
 and will be added to a new confirmation action (as specified by 
@@ -44,10 +40,14 @@ custom field specified on a Thng in the project's scope, for example:
 
 ```json
 {
-  "thng": "UKn4wYKEYyQnc2aawGhytBfc",
   "type": "_ItemShipped",
+  "thng": "UKn4wYKEYyQnc2aawGhytBfc",
   "customFields": {
-    "createOriginTrail": true
+    "createOriginTrail": true,
+    "senderName": "EVRYTHNG",
+    "senderEmail": "otnode@evrythng.com",
+    "receiverName": "OriginTrail",
+    "receiverEmail": "hello@origintrail.io"
   }
 }
 ```
@@ -58,6 +58,8 @@ from the OriginTrail API:
 ```json
 {
   "id": "U5nHbb84reSPeGaRampWfpTk",
+  "type": "_originTrailCertified",
+  "thng": "UKn4wYKEYyQnc2aawGhytBfc",
   "createdAt": 1537872362453,
   "customFields": {
     "actionId": "U5mQKGDpnymBwQwRakyBqeYh",
@@ -66,7 +68,6 @@ from the OriginTrail API:
     "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:Up4nR6KUGYaVtXawwkYBmpcf"
   },
   "timestamp": 1537872362453,
-  "type": "_originTrailCertified",
   "location": {
     "latitude": 39.0481,
     "longitude": -77.4728,
@@ -80,7 +81,6 @@ from the OriginTrail API:
   },
   "locationSource": "geoIp",
   "createdByProject": "UnnGRADHBgswtKRwRE5HPpTk",
-  "createdByApp": "U5H4wYb5y2xRhNwwa3cH9Nsa",
-  "thng": "UKn4wYKEYyQnc2aawGhytBfc"
+  "createdByApp": "U5H4wYb5y2xRhNwwa3cH9Nsa"
 }
 ```
