@@ -1,26 +1,29 @@
 # reactor-origintrail
 
-A Reactor script to verify EVRYTHNG Actions on the blockchain via OriginTrail.
+A Reactor script to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
 
 
 ## Configure
 
 * Get credentials for the OriginTrail node, and add them to `main.js`.
-* Create the  `OUTPUT_ACTION_TYPE` (the default, or your choice) action type in 
+* Create the  `OUTPUT_ACTION_TYPE` (the default, or your choice) action type in
   the EVRYTHNG project.
-* Deploy this Reactor script in an application within that project, not 
+* Deploy this Reactor script in an application within that project, not
   forgetting to specify the `dependencies` in `package.json`.
 
 
 ## Use
 
-The script will react to actions with a `createOriginTrail=true` custom field 
+The script will react to actions with a `createOriginTrail=true` custom field
 and will create a blockchain transaction for the action using the specified
-OriginTrail node. For convenience, EVRYTHNG offers managed OriginTrail nodes
-that you can use, such as `https://origintrail.evrythng.io`.
+OriginTrail node.
 
-In addition to the triggering custom field above, other fields should be 
-specified to set the sender and receiver details in each OriginTrail 
+EVRYTHNG offers managed blockchain nodes to its Enterprise customers.
+Our OriginTrail Enterprise nodes are accessible via `https://origintrail.evrythng.io`.
+[Contact us](https://evrythng.com/contact-us/) if you would like to use these managed nodes.
+
+In addition to the triggering custom field above, other fields should be
+specified to set the sender and receiver details in each OriginTrail
 transaction:
 
 * `senderName` - Sending company name.
@@ -28,10 +31,9 @@ transaction:
 * `receiverName` - Receiving company name.
 * `receiverEmail` - Receiving company email.
 
-The result will include the transaction ID from the blockchain 
-and will be added to a new confirmation action (as specified by 
+The result will include the transaction ID from the blockchain
+and will be added to a new confirmation action (as specified by
 `RESULT_ACTION_TYPE`).
-
 
 ## Testing
 
@@ -52,7 +54,7 @@ custom field specified on a Thng in the project's scope, for example:
 }
 ```
 
-The resulting action created by the script will contain important information 
+The resulting action created by the script will contain important information
 from the OriginTrail API:
 
 ```json
