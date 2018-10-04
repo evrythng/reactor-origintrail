@@ -1,6 +1,6 @@
 # reactor-origintrail
 
-A Reactor script to verify or share EVRYTHNG Actions on the blockchain via the OriginTrail protocol.
+A Reactor script to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
 
 
 ## Configure
@@ -20,7 +20,7 @@ OriginTrail node.
 
 EVRYTHNG offers managed blockchain nodes to its Enterprise customers.
 Our OriginTrail Enterprise nodes are accessible via `https://origintrail.evrythng.io`.
-Contact us if you would like to use these managed nodes.
+[Contact us](https://evrythng.com/contact-us/) if you would like to use these managed nodes.
 
 In addition to the triggering custom field above, other fields should be
 specified to set the sender and receiver details in each OriginTrail
