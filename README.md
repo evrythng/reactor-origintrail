@@ -1,0 +1,86 @@
+# reactor-origintrail
+
+A Reactor script to verify EVRYTHNG Actions on the blockchain via OriginTrail.
+
+
+## Configure
+
+* Get credentials for the OriginTrail node, and add them to `main.js`.
+* Create the  `OUTPUT_ACTION_TYPE` (the default, or your choice) action type in 
+  the EVRYTHNG project.
+* Deploy this Reactor script in an application within that project, not 
+  forgetting to specify the `dependencies` in `package.json`.
+
+
+## Use
+
+The script will react to actions with a `createOriginTrail=true` custom field 
+and will create a blockchain transaction for the action using the specified
+OriginTrail node. For convenience, EVRYTHNG offers managed OriginTrail nodes
+that you can use, such as `https://origintrail.evrythng.io`.
+
+In addition to the triggering custom field above, other fields should be 
+specified to set the sender and receiver details in each OriginTrail 
+transaction:
+
+* `senderName` - Sending company name.
+* `senderEmail` - Sending company email.
+* `receiverName` - Receiving company name.
+* `receiverEmail` - Receiving company email.
+
+The result will include the transaction ID from the blockchain 
+and will be added to a new confirmation action (as specified by 
+`RESULT_ACTION_TYPE`).
+
+
+## Testing
+
+Once the script is installed, test it by creating an action with the correct
+custom field specified on a Thng in the project's scope, for example:
+
+```json
+{
+  "type": "_ItemShipped",
+  "thng": "UKn4wYKEYyQnc2aawGhytBfc",
+  "customFields": {
+    "createOriginTrail": true,
+    "senderName": "EVRYTHNG",
+    "senderEmail": "otnode@evrythng.com",
+    "receiverName": "OriginTrail",
+    "receiverEmail": "hello@origintrail.io"
+  }
+}
+```
+
+The resulting action created by the script will contain important information 
+from the OriginTrail API:
+
+```json
+{
+  "id": "U5nHbb84reSPeGaRampWfpTk",
+  "type": "_originTrailCertified",
+  "thng": "UKn4wYKEYyQnc2aawGhytBfc",
+  "createdAt": 1537872362453,
+  "customFields": {
+    "actionId": "U5mQKGDpnymBwQwRakyBqeYh",
+    "ethereumWallet": "0xE1E9c537...",
+    "originTrailImport": "0xd44182d1...",
+    "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:Up4nR6KUGYaVtXawwkYBmpcf"
+  },
+  "timestamp": 1537872362453,
+  "location": {
+    "latitude": 39.0481,
+    "longitude": -77.4728,
+    "position": {
+      "type": "Point",
+      "coordinates": [
+        -77.4728,
+        39.0481
+      ]
+    }
+  },
+  "locationSource": "geoIp",
+  "createdByProject": "UnnGRADHBgswtKRwRE5HPpTk",
+  "createdByApp": "U5H4wYb5y2xRhNwwa3cH9Nsa"
+}
+```
