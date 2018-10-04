@@ -1,6 +1,6 @@
 # reactor-origintrail
 
-A Reactor script to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
+A [Reactor extension](https://developers.evrythng.com/docs/reactor-extensions) script to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
 
 
 ## Configure
