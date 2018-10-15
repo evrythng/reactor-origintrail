@@ -2,6 +2,8 @@
 
 A [Reactor extension](https://developers.evrythng.com/docs/reactor-extensions) script to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
 
+The readme focuses on the basic parameters. To learn more, have a quick look at our [OriginTrail Reactor Extension quickstart](https://developers.evrythng.com/docs/origintrail).
+
 
 ## Configure
 
