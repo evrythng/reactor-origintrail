@@ -69,7 +69,7 @@ from the OriginTrail API:
     "actionId": "U5mQKGDpnymBwQwRakyBqeYh",
     "ethereumWallet": "0xE1E9c537...",
     "originTrailImport": "0xd44182d1...",
-    "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:Up4nR6KUGYaVtXawwkYBmpcf"
+    "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:UqdMHQppngd7eXwRwmXKBhQr"
   },
   "timestamp": 1537872362453,
   "location": {
