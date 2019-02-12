@@ -12,10 +12,11 @@ const DEFAULT_RECEIVER_NAME = 'EVRYTHNG';
 const DEFAULT_RECEIVER_EMAIL = 'otnode@evrythng.com';
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
-let action, thng;
+let action, thng, replicationRequested, importRes, replicationRes;
 
 /**
  * Build the XML payload from the EVRYTHNG action and Thng.
+ * 
  * @returns {String} - An XML document string that contains event data.
  */
 const buildXmlDocument = () => {
@@ -145,6 +146,7 @@ const buildXmlDocument = () => {
 
 /**
  * Read the complete Thng object from the action.
+ *
  * @returns {Promise} A Promise that resolves to the Thng object, or an error.
  */
 const readThng = () => {
@@ -160,12 +162,13 @@ const readThng = () => {
 
 /**
  * Create an OriginTrail import through their API.
- * @returns {Promise} A Promise that resolves to the response body.
+ *
+ * @returns {Promise} A Promise that resolves to the response body as an object.
  */
 const createImport = () => new Promise((resolve, reject) => {
-  // Send data to OriginTrail
   const url = `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`;
   const formData = { importfile: buildXmlDocument(action, thng), importtype: 'GS1' };
+  
   request.post({ url, formData }, (err, res, body) => {
     if (err) {
       reject(err);
@@ -173,26 +176,56 @@ const createImport = () => new Promise((resolve, reject) => {
     }
 
     logger.info(`Event exported to OriginTrail -- ${body}`);
-    resolve(body);
+    importRes = JSON.parse(body);
+    resolve();
+  });
+});
+
+/**
+ * Use the import response to request replication, if required by the user with 
+ * the replicateOriginTrail=true customField.
+ *
+ * @returns {Promise} Promise that resolves to both response objects.
+ */
+const requestReplication = () => new Promise((resolve, reject) => {
+  if (!replicationRequested) {
+    logger.info('Replication was not requested, skipping');
+    resolve();
+    return;
+  }
+
+  const payload = { data_set_id: importRes.data_set_id };
+  request.post({
+    url: `${OT_NODE_URL}/api/replication?auth_token=${OT_AUTH_TOKEN}`,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }, (err, response, body) => {
+    if (err) {
+      reject(err);
+      return;
+    }
+
+    replicationRes = JSON.parse(body);
+    logger.info(`Replication response: ${body}`);
+    resolve();
   });
 });
 
 /**
  * Create the confirmation action using the OriginTrail response.
  *
- * @param {string} body - The response from the OriginTrail API.
  * @returns {Promise} Promise that resolves to the new confirmation action.
  */
-const createConfirmationAction = (body) => {
-  const fullResponse = JSON.parse(body);
+const createConfirmationAction = () => {
   const payload = {
     thng: action.thng,
     customFields: {
       actionId: action.id,
       originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
-      dataSetId: fullResponse.data_set_id,
+      dataSetId: importRes.data_set_id,
       ethereumWallet: WALLET,
-      fullResponse,
+      importRes,
+      replicationRes,
     },
   };
   return app.action(OUTPUT_ACTION_TYPE).create(payload);
@@ -201,12 +234,14 @@ const createConfirmationAction = (body) => {
 // @filter(onActionCreated) action.customFields.createOriginTrail=true
 function onActionCreated(event) {
   action = event.action;
+  replicationRequested = action.customFields.replicateOriginTrail;
   logger.info(`Received action to be certified via OriginTrail: ${action.id}`);
 
   readThng()
     .then(createImport)
-    .then(body => createConfirmationAction(body))
-    .then(res => logger.info(`Created OriginTrail action: ${res.id}`))
+    .then(requestReplication)
+    .then(createConfirmationAction)
+    .then(newAction => logger.info(`Created OriginTrail action: ${newAction.id}`))
     .catch(err => logger.error(err.message || JSON.stringify(err)))
     .then(done);
 }
