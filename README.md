@@ -68,8 +68,13 @@ from the OriginTrail API:
   "customFields": {
     "actionId": "U5mQKGDpnymBwQwRakyBqeYh",
     "ethereumWallet": "0xE1E9c537...",
-    "originTrailImport": "0xd44182d1...",
-    "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:UqdMHQppngd7eXwRwmXKBhQr"
+    "dataSetId": "0x7027d78f58ccc8e1a0199e74f09f6a4fa363e5746d1378a6ad574eed02b358be",
+    "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:UqdMHQppngd7eXwRwmXKBhQr",
+    "fullResponse": {
+      "data_set_id": "0x7027d78f58ccc8e1a0199e74f09f6a4fa363e5746d1378a6ad574eed02b358be",
+      "message": "Import success",
+      "wallet": "0xE1E9c537..."
+    }
   },
   "timestamp": 1537872362453,
   "location": {

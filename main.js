@@ -186,14 +186,15 @@ const createImport = (action, thng) => new Promise((resolve, reject) => {
  * @returns {Promise} Promise that resolves to the new confirmation action.
  */
 const createConfirmationAction = (action, thng, body) => {
-  const { import_id } = JSON.parse(body);
+  const fullResponse = JSON.parse(body);
   const payload = {
     thng: action.thng,
     customFields: {
       actionId: action.id,
       originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
-      originTrailImport: import_id,
+      dataSetId: fullResponse.data_set_id,
       ethereumWallet: WALLET,
+      fullResponse,
     },
   };
   return app.action(OUTPUT_ACTION_TYPE).create(payload);
