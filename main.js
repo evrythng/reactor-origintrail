@@ -157,12 +157,12 @@ const readThng = (action) => {
 };
 
 /**
- * Create an OriginTrail action through their API.
+ * Create an OriginTrail import through their API.
  * @param {Object} action - The action that occurred.
  * @param {Object} thng - The Thng the action occurred on.
- * @returns {Promise} A Promise that resolves to the created output action.
+ * @returns {Promise} A Promise that resolves to the response body.
  */
-const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) => {
+const createImport = (action, thng) => new Promise((resolve, reject) => {
   // Send data to OriginTrail
   const url = `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`;
   const formData = { importfile: buildXmlDocument(action, thng), importtype: 'GS1' };
@@ -173,23 +173,31 @@ const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) 
     }
 
     logger.info(`Event exported to OriginTrail -- ${body}`);
-
-    // Create output EVRYTHNG action
-    const { import_id } = JSON.parse(body);
-    const payload = {
-      thng: action.thng,
-      customFields: {
-        actionId: action.id,
-        originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
-        originTrailImport: import_id,
-        ethereumWallet: WALLET,
-      },
-    };
-    app.action(OUTPUT_ACTION_TYPE).create(payload)
-      .then(resolve)
-      .catch(reject);
+    resolve(body);
   });
 });
+
+/**
+ * Create the confirmation action using the OriginTrail response.
+ *
+ * @param {object} action - The triggering action.
+ * @param {object} thng - The Thng.
+ * @param {string} body - The response from the OriginTrail API.
+ * @returns {Promise} Promise that resolves to the new confirmation action.
+ */
+const createConfirmationAction = (action, thng, body) => {
+  const { import_id } = JSON.parse(body);
+  const payload = {
+    thng: action.thng,
+    customFields: {
+      actionId: action.id,
+      originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
+      originTrailImport: import_id,
+      ethereumWallet: WALLET,
+    },
+  };
+  return app.action(OUTPUT_ACTION_TYPE).create(payload);
+};
 
 // @filter(onActionCreated) action.customFields.createOriginTrail=true
 function onActionCreated(event) {
@@ -197,8 +205,13 @@ function onActionCreated(event) {
   logger.info(`Received action to be certified via OriginTrail: ${action.id}`);
 
   readThng(action)
-    .then(thng => createOriginTrailAction(action, thng))
+    .then((thng) => {
+      return createImport(action, thng)
+        .then(body => createConfirmationAction(action, thng, body));
+    })
     .then(newAction => logger.info(`Created OriginTrail action: ${newAction.id}`))
     .catch(err => logger.error(err.message || JSON.stringify(err)))
     .then(done);
 }
+
+module.exports = { onActionCreated };
