@@ -12,13 +12,13 @@ const DEFAULT_RECEIVER_NAME = 'EVRYTHNG';
 const DEFAULT_RECEIVER_EMAIL = 'otnode@evrythng.com';
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
+let action, thng;
+
 /**
  * Build the XML payload from the EVRYTHNG action and Thng.
- * @param {Object} action - The action that occurred.
- * @param {Object} thng - The Thng the action occurred on.
  * @returns {String} - An XML document string that contains event data.
  */
-const buildXmlDocument = (action, thng) => {
+const buildXmlDocument = () => {
   const { location, createdAt, context, customFields } = action;
   const { latitude, longitude } = location;
   const creationTime = new Date(createdAt).toISOString();
@@ -145,24 +145,24 @@ const buildXmlDocument = (action, thng) => {
 
 /**
  * Read the complete Thng object from the action.
- * @param {Object} action - The action that triggered the script.
  * @returns {Promise} A Promise that resolves to the Thng object, or an error.
  */
-const readThng = (action) => {
+const readThng = () => {
   if (!action.thng) {
     return Promise.reject('Action did not specify a Thng');
   }
 
-  return app.thng(action.thng).read();
+  return app.thng(action.thng).read()
+    .then((res) => {
+      thng = res;
+    });
 };
 
 /**
  * Create an OriginTrail import through their API.
- * @param {Object} action - The action that occurred.
- * @param {Object} thng - The Thng the action occurred on.
  * @returns {Promise} A Promise that resolves to the response body.
  */
-const createImport = (action, thng) => new Promise((resolve, reject) => {
+const createImport = () => new Promise((resolve, reject) => {
   // Send data to OriginTrail
   const url = `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`;
   const formData = { importfile: buildXmlDocument(action, thng), importtype: 'GS1' };
@@ -180,12 +180,10 @@ const createImport = (action, thng) => new Promise((resolve, reject) => {
 /**
  * Create the confirmation action using the OriginTrail response.
  *
- * @param {object} action - The triggering action.
- * @param {object} thng - The Thng.
  * @param {string} body - The response from the OriginTrail API.
  * @returns {Promise} Promise that resolves to the new confirmation action.
  */
-const createConfirmationAction = (action, thng, body) => {
+const createConfirmationAction = (body) => {
   const fullResponse = JSON.parse(body);
   const payload = {
     thng: action.thng,
@@ -202,15 +200,13 @@ const createConfirmationAction = (action, thng, body) => {
 
 // @filter(onActionCreated) action.customFields.createOriginTrail=true
 function onActionCreated(event) {
-  const { action } = event;
+  action = event.action;
   logger.info(`Received action to be certified via OriginTrail: ${action.id}`);
 
-  readThng(action)
-    .then((thng) => {
-      return createImport(action, thng)
-        .then(body => createConfirmationAction(action, thng, body));
-    })
-    .then(newAction => logger.info(`Created OriginTrail action: ${newAction.id}`))
+  readThng()
+    .then(createImport)
+    .then(body => createConfirmationAction(body))
+    .then(res => logger.info(`Created OriginTrail action: ${res.id}`))
     .catch(err => logger.error(err.message || JSON.stringify(err)))
     .then(done);
 }
