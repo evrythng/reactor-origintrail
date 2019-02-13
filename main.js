@@ -189,7 +189,7 @@ const requestPromise = opts => new Promise((resolve, reject) => {
 const createImport = () => requestPromise({
   url: `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`,
   method: 'post',
-  formData: { importfile: buildXmlDocument(action, thng), importtype: 'GS1' },
+  formData: { importfile: buildXmlDocument(), importtype: 'GS1' },
 }).then((json) => {
   logger.info(`Event exported to OriginTrail -- ${JSON.stringify(json)}`);
   importRes = json;
