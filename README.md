@@ -1,8 +1,13 @@
 # reactor-origintrail
 
-This Reactor Extension script is part of [EVRYTHNG's Blockchain Integration Hub](https://developers.evrythng.com/docs/blockchain-integration-hub). It allows you to verify or share [EVRYTHNG](https://evrythng.com) Actions on the blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
+This Reactor Extension script is part of 
+[EVRYTHNG's Blockchain Integration Hub](https://developers.evrythng.com/docs/blockchain-integration-hub). 
+It allows you to verify or share [EVRYTHNG](https://evrythng.com) actions on the 
+blockchain via the [OriginTrail](https://origintrail.io/) decentralized protocol.
 
-The readme focuses on the basic parameters. To learn more, have a quick look at our [OriginTrail Reactor Extension quickstart](https://developers.evrythng.com/docs/origintrail).
+This README focuses on the basic parameters. To learn more, have a quick look at 
+our 
+[OriginTrail Reactor Extension quickstart](https://developers.evrythng.com/docs/origintrail).
 
 
 ## Configure
@@ -18,11 +23,16 @@ The readme focuses on the basic parameters. To learn more, have a quick look at 
 
 The script will react to actions with a `createOriginTrail=true` custom field
 and will create a blockchain transaction for the action using the specified
-OriginTrail node.
+OriginTrail node. If the `replicateOriginTrail=true` field is also included, 
+a replication request will be started to send the data to other OriginTrail 
+nodes. You can 
+[query the status](http://docs.origintrail.io/en/latest/introduction-to-api.html#api-replication-replication-id-get) of the replication
+at any time using the `replication_id` stored in the confirmation action.
 
 EVRYTHNG offers managed blockchain nodes to its Enterprise customers.
-Our OriginTrail Enterprise nodes are accessible via `https://origintrail.evrythng.io`.
-[Contact us](https://evrythng.com/contact-us/) if you would like to use these managed nodes.
+Our OriginTrail Enterprise nodes are accessible via 
+`https://origintrail.evrythng.io`. [Contact us](https://evrythng.com/contact-us/) 
+if you would like to use these managed nodes.
 
 In addition to the triggering custom field above, other fields should be
 specified to set the sender and receiver details in each OriginTrail
@@ -37,6 +47,7 @@ The result will include the transaction ID from the blockchain
 and will be added to a new confirmation action (as specified by
 `RESULT_ACTION_TYPE`).
 
+
 ## Testing
 
 Once the script is installed, test it by creating an action with the correct
@@ -48,6 +59,7 @@ custom field specified on a Thng in the project's scope, for example:
   "thng": "UKn4wYKEYyQnc2aawGhytBfc",
   "customFields": {
     "createOriginTrail": true,
+    "replicateOriginTrail": true,
     "senderName": "EVRYTHNG",
     "senderEmail": "otnode@evrythng.com",
     "receiverName": "OriginTrail",
@@ -70,10 +82,14 @@ from the OriginTrail API:
     "ethereumWallet": "0xE1E9c537...",
     "dataSetId": "0x7027d78f58ccc8e1a0199e74f09f6a4fa363e5746d1378a6ad574eed02b358be",
     "originTrailUrl": "https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:UqdMHQppngd7eXwRwmXKBhQr",
-    "fullResponse": {
+    "importRes": {
       "data_set_id": "0x7027d78f58ccc8e1a0199e74f09f6a4fa363e5746d1378a6ad574eed02b358be",
       "message": "Import success",
       "wallet": "0xE1E9c537..."
+    },
+    "replicationRes": {
+      "data_set_id":"0x7027d78f58ccc8e1a0199e74f09f6a4fa363e5746d1378a6ad574eed02b358be",
+      "replication_id":"bbc81be4-1465-4049-8c80-bb900f9bf967"
     }
   },
   "timestamp": 1537872362453,
