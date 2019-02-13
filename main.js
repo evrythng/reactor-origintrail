@@ -166,7 +166,7 @@ const readThng = () => {
  * @param {object} opts - Request options.
  * @returns {Promise} Promise resolving to the request response object.
  */
-const requestPromise = (opts) => new Promise((resolve, reject) => {
+const requestPromise = opts => new Promise((resolve, reject) => {
   request(opts, (err, response, body) => {
     if (err) {
       reject(err);
