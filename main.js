@@ -12,13 +12,14 @@ const DEFAULT_RECEIVER_NAME = 'EVRYTHNG';
 const DEFAULT_RECEIVER_EMAIL = 'otnode@evrythng.com';
 const OUTPUT_ACTION_TYPE = '_originTrailCertified';
 
+let action, target, targetType, replicationRequested, importRes, replicationRes;
+
 /**
- * Build the XML payload from the EVRYTHNG action and Thng.
- * @param {Object} action - The action that occurred.
- * @param {Object} thng - The Thng the action occurred on.
+ * Build the XML payload from the EVRYTHNG action and target resource.
+ *
  * @returns {String} - An XML document string that contains event data.
  */
-const buildXmlDocument = (action, thng) => {
+const buildXmlDocument = () => {
   const { location, createdAt, context, customFields } = action;
   const { latitude, longitude } = location;
   const creationTime = new Date(createdAt).toISOString();
@@ -89,16 +90,16 @@ const buildXmlDocument = (action, thng) => {
             </Vocabulary>
             <Vocabulary type="urn:ot:object:product">
               <VocabularyElementList>
-                <VocabularyElement id="urn:ot:object:product:${thng.id}">
+                <VocabularyElement id="urn:ot:object:product:${target.id}">
                   <attribute id="urn:ot:object:product:category">Product</attribute>
-                  <attribute id="urn:ot:object:product:description">${thng.name}</attribute>
+                  <attribute id="urn:ot:object:product:description">${target.name}</attribute>
                 </VocabularyElement>
               </VocabularyElementList>
             </Vocabulary>
             <Vocabulary type="urn:ot:object:batch">
               <VocabularyElementList>
-                <VocabularyElement id="urn:epc:id:sgtin:${thng.id}">
-                  <attribute id="urn:ot:object:product:batch:productId">urn:ot:object:product:${thng.id}</attribute>
+                <VocabularyElement id="urn:epc:id:sgtin:${target.id}">
+                  <attribute id="urn:ot:object:product:batch:productId">urn:ot:object:product:${target.id}</attribute>
                 </VocabularyElement>
               </VocabularyElementList>
             </Vocabulary>
@@ -112,7 +113,7 @@ const buildXmlDocument = (action, thng) => {
           <eventTime>${creationTime}</eventTime>
           <eventTimeZoneOffset>-00:00</eventTimeZoneOffset>
           <epcList>
-            <epc>urn:epc:id:sgtin:${thng.id}</epc>
+            <epc>urn:epc:id:sgtin:${target.id}</epc>
           </epcList>
           <action>OBSERVE</action>
           <bizStep>urn:epcglobal:cbv:bizstep:observation</bizStep>
@@ -126,7 +127,7 @@ const buildXmlDocument = (action, thng) => {
           <extension>
             <quantityList>
               <quantityElement>
-                <epcClass>urn:epc:id:sgtin:${thng.id}</epcClass>
+                <epcClass>urn:epc:id:sgtin:${target.id}</epcClass>
                 <quantity>1</quantity>
                 <uom>PCS</uom>
               </quantityElement>
@@ -144,61 +145,121 @@ const buildXmlDocument = (action, thng) => {
 };
 
 /**
- * Read the complete Thng object from the action.
- * @param {Object} action - The action that triggered the script.
- * @returns {Promise} A Promise that resolves to the Thng object, or an error.
+ * Read the complete target object from the action.
+ * This is either a Thng, product, or collection. Only 'id' and 'name' is required
+ * by buildXmlDocument(), so this works nicely.
+ *
+ * @returns {Promise} A Promise that resolves once the process is complete.
  */
-const readThng = (action) => {
-  if (!action.thng) {
-    return Promise.reject('Action did not specify a Thng');
+const readTarget = () => {
+  if (action.thng) {
+    targetType = 'thng';
+  } else if (action.product) {
+    targetType = 'product';
+  } else if (action.collection) {
+    targetType = 'collection';
+  } else {
+    return Promise.reject('No target was specified!');
   }
 
-  return app.thng(action.thng).read();
+  return app[targetType](action[targetType]).read().then((res) => {
+    target = res;
+  });
 };
 
 /**
- * Create an OriginTrail action through their API.
- * @param {Object} action - The action that occurred.
- * @param {Object} thng - The Thng the action occurred on.
- * @returns {Promise} A Promise that resolves to the created output action.
+ * Promise and error handling wrapper for request()
+ *
+ * @param {object} opts - Request options.
+ * @returns {Promise} Promise resolving to the request response object.
  */
-const createOriginTrailAction = (action, thng) => new Promise((resolve, reject) => {
-  // Send data to OriginTrail
-  const url = `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`;
-  const formData = { importfile: buildXmlDocument(action, thng), importtype: 'GS1' };
-  request.post({ url, formData }, (err, res, body) => {
+const requestPromise = opts => new Promise((resolve, reject) => {
+  request(opts, (err, response, body) => {
     if (err) {
       reject(err);
       return;
     }
+    if (response.statusCode > 400) {
+      reject(body);
+      return;
+    }
 
-    logger.info(`Event exported to OriginTrail -- ${body}`);
-
-    // Create output EVRYTHNG action
-    const { import_id } = JSON.parse(body);
-    const payload = {
-      thng: action.thng,
-      customFields: {
-        actionId: action.id,
-        originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${thng.id}`,
-        originTrailImport: import_id,
-        ethereumWallet: WALLET,
-      },
-    };
-    app.action(OUTPUT_ACTION_TYPE).create(payload)
-      .then(resolve)
-      .catch(reject);
+    resolve(JSON.parse(body));
   });
 });
 
+/**
+ * Create an OriginTrail import through their API.
+ *
+ * @returns {Promise} A Promise that resolves when the request is complete.
+ */
+const createImport = () => requestPromise({
+  url: `${OT_NODE_URL}/api/import?auth_token=${OT_AUTH_TOKEN}`,
+  method: 'post',
+  formData: { importfile: buildXmlDocument(), importtype: 'GS1' },
+}).then((json) => {
+  logger.info(`Import response: ${JSON.stringify(json)}`);
+  importRes = json;
+});
+
+/**
+ * Use the import response to request replication, if required by the user with
+ * the replicateOriginTrail=true customField.
+ *
+ * @returns {Promise} Promise that resolves when the request is complete.
+ */
+const requestReplication = () => {
+  if (!replicationRequested) {
+    logger.info('Replication was not requested, skipping');
+    return Promise.resolve();
+  }
+
+  return requestPromise({
+    url: `${OT_NODE_URL}/api/replication?auth_token=${OT_AUTH_TOKEN}`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data_set_id: importRes.data_set_id }),
+  }).then((json) => {
+    replicationRes = json;
+    logger.info(`Replication response: ${JSON.stringify(json)}`);
+  });
+};
+
+/**
+ * Create the confirmation action using the OriginTrail response.
+ *
+ * @returns {Promise} Promise that resolves to the new confirmation action.
+ */
+const createConfirmationAction = () => {
+  const payload = {
+    [targetType]: target.id,
+    customFields: {
+      actionId: action.id,
+      ethereumWallet: WALLET,
+      originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${target.id}`,
+      dataSetId: importRes.data_set_id,
+      replicationId: replicationRes.replication_id,
+      importRes,
+      replicationRes,
+    },
+  };
+
+  return app.action(OUTPUT_ACTION_TYPE).create(payload);
+};
+
 // @filter(onActionCreated) action.customFields.createOriginTrail=true
 function onActionCreated(event) {
-  const { action } = event;
+  action = event.action;
+  replicationRequested = action.customFields.replicateOriginTrail;
   logger.info(`Received action to be certified via OriginTrail: ${action.id}`);
 
-  readThng(action)
-    .then(thng => createOriginTrailAction(action, thng))
+  readTarget()
+    .then(createImport)
+    .then(requestReplication)
+    .then(createConfirmationAction)
     .then(newAction => logger.info(`Created OriginTrail action: ${newAction.id}`))
     .catch(err => logger.error(err.message || JSON.stringify(err)))
     .then(done);
 }
+
+module.exports = { onActionCreated };
