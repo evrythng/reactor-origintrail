@@ -153,24 +153,18 @@ const buildXmlDocument = () => {
  */
 const readTarget = () => {
   if (action.thng) {
-    return app.thng(action.thng).read().then((res) => {
-      target = res;
-    });
+    targetType = 'thng';
+  } else if (action.product) {
+    targetType = 'product';
+  } else if (action.collection) {
+    targetType = 'collection';
+  } else {
+    return Promise.reject('No target was specified!');
   }
 
-  if (action.collection) {
-    return app.collection(action.collection).read().then((res) => {
-      target = res;
-    });
-  }
-
-  if (action.product) {
-    return app.product(action.product).read().then((res) => {
-      target = res;
-    });
-  }
-
-  return Promise.reject('Action did not specify a target');
+  return app[targetType](action[targetType]).read().then((res) => {
+    target = res;
+  });
 };
 
 /**
@@ -204,7 +198,7 @@ const createImport = () => requestPromise({
   method: 'post',
   formData: { importfile: buildXmlDocument(), importtype: 'GS1' },
 }).then((json) => {
-  logger.info(`Event exported to OriginTrail -- ${JSON.stringify(json)}`);
+  logger.info(`Import response: ${JSON.stringify(json)}`);
   importRes = json;
 });
 
@@ -238,6 +232,7 @@ const requestReplication = () => {
  */
 const createConfirmationAction = () => {
   const payload = {
+    [targetType]: target.id,
     customFields: {
       actionId: action.id,
       ethereumWallet: WALLET,
@@ -248,14 +243,6 @@ const createConfirmationAction = () => {
       replicationRes,
     },
   };
-
-  if (action.thng) {
-    payload.thng = action.thng;
-  } else if (action.product) {
-    payload.product = action.product;
-  } else if (action.collection) {
-    payload.collection = action.collection;
-  }
 
   return app.action(OUTPUT_ACTION_TYPE).create(payload);
 };
