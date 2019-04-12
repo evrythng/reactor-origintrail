@@ -238,7 +238,7 @@ const createConfirmationAction = () => {
       ethereumWallet: WALLET,
       originTrailUrl: `https://evrythng.origintrail.io/?value=urn:epc:id:sgtin:${target.id}`,
       dataSetId: importRes.data_set_id,
-      replicationId: replicationRes.replication_id,
+      replicationId: replicationRes ? replicationRes.replication_id : '',
       importRes,
       replicationRes,
     },
